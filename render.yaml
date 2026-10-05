@@ -6,20 +6,3 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.8
-      - key: TSE_UF
-        value: ma
-      - key: TSE_CARGO
-        value: "0006"
-      - key: TSE_TURNO
-        value: "1"
-      - key: CACHE_TTL
-        value: "300"
-      - key: GEOCODE_ENABLED
-        value: "true"
-      - key: CANDIDATO_NUMERO
-        sync: false
-      - key: CANDIDATO_NOME
-        sync: false
