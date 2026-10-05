@@ -44,6 +44,17 @@
     </section>
   </section>
 </main>
+
+<!-- Modal de seleção de candidatos -->
+<div id="candidateModal" class="modal" style="display:none">
+  <div class="modal-content">
+    <h2>Selecione um candidato</h2>
+    <input id="candidateSearch" placeholder="Buscar por nome ou número...">
+    <div id="candidateList" class="candidate-list"></div>
+    <div id="modalError" class="error"></div>
+  </div>
+</div>
+
 <footer>Dados eleitorais: Tribunal Superior Eleitoral (TSE). Projeto independente e sem vínculo com a Justiça Eleitoral.</footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/app.js"></script>
