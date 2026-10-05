@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MA Eleições 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div>
+    <strong>MA ELEIÇÕES 2026</strong>
+    <span>Mapa de votação — Deputado Federal</span>
+  </div>
+  <span class="source">Projeto independente · Fonte: TSE</span>
+</header>
+<main>
+  <aside>
+    <div class="eyebrow">CANDIDATO</div>
+    <h1 id="candidate">Carregando...</h1>
+    <div id="party" class="party"></div>
+    <div class="stats">
+      <div><small>Número</small><b id="number">—</b></div>
+      <div><small>Votos no Maranhão</small><b id="votes">—</b></div>
+      <div><small>Percentual</small><b id="percent">—</b></div>
+    </div>
+    <input id="search" placeholder="Buscar município...">
+    <div id="municipalityList" class="list"></div>
+  </aside>
+  <section class="content">
+    <div class="map-head">
+      <div>
+        <b>Mapa de votação</b>
+        <span id="mapHint">Clique em um município</span>
+      </div>
+      <button id="back">Maranhão inteiro</button>
+    </div>
+    <div id="map"></div>
+    <section class="detail">
+      <div id="detailTitle">Selecione um município</div>
+      <div id="detailSub">A votação por seção será carregada quando você entrar no município.</div>
+      <div id="sectionGrid"></div>
+    </section>
+  </section>
+</main>
+<footer>Dados eleitorais: Tribunal Superior Eleitoral (TSE). Projeto independente e sem vínculo com a Justiça Eleitoral.</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

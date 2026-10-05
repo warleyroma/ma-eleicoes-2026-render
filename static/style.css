@@ -1,0 +1,16 @@
+:root{--bg:#f4f6fa;--card:#fff;--text:#152033;--muted:#667085;--line:#e5e7eb;--accent:#5b21b6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,system-ui,-apple-system,Segoe UI,Arial}
+header{height:66px;background:#101828;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+header strong{font-size:17px;letter-spacing:.4px}header span{margin-left:12px;color:#cbd5e1}.source{font-size:12px}
+main{display:grid;grid-template-columns:320px 1fr;gap:16px;max-width:1500px;margin:16px auto;padding:0 16px}
+aside,.content,.detail{background:var(--card);border:1px solid var(--line);border-radius:15px}
+aside{padding:20px}.eyebrow{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px}h1{font-size:22px;margin:8px 0 4px}.party{color:var(--muted)}
+.stats{display:grid;gap:10px;margin:20px 0}.stats div{border-bottom:1px solid var(--line);padding:10px 0}.stats small{display:block;color:var(--muted)}.stats b{display:block;font-size:23px;margin-top:4px}
+input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px}.list{margin-top:10px;max-height:530px;overflow:auto}.item{padding:9px;border-bottom:1px solid var(--line);cursor:pointer}.item:hover{background:#f8f5ff}.item b{display:block}.item span{color:var(--muted);font-size:12px}
+.content{padding:8px}.map-head{height:48px;padding:4px 8px 8px;display:flex;justify-content:space-between;align-items:center}.map-head span{color:var(--muted);font-size:12px;margin-left:10px}
+button{border:1px solid var(--line);background:#fff;padding:8px 11px;border-radius:9px;cursor:pointer}#map{height:610px;border-radius:12px;overflow:hidden}
+.detail{margin-top:10px;padding:16px}.detail #detailTitle{font-size:19px;font-weight:750}.detail #detailSub{color:var(--muted);margin:4px 0 15px}
+table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left}.section{cursor:pointer}.section:hover{background:#f8f5ff}
+.badge{font-size:11px;padding:4px 7px;border-radius:999px;background:#eee;color:#444}.loading{color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
+@media(max-width:900px){main{grid-template-columns:1fr}#map{height:480px}.list{max-height:260px}.source{display:none}}
