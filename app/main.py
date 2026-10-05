@@ -14,13 +14,25 @@ tse=TSEClient(settings.tse_uf,settings.tse_cargo,settings.tse_turno,cache)
 app=FastAPI(title="MA Eleições 2026",version="2.0.0")
 app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_methods=["*"],allow_headers=["*"])
 
+
+def resolve_candidate(numero: str | None = None, nome: str | None = None):
+    numero = (numero or settings.candidato_numero or "").strip()
+    nome = (nome or settings.candidato_nome or "").strip()
+    c = tse.candidate(numero, nome)
+    if not c:
+        return None
+    return c
+
+
 @app.get("/")
 def home():
     return FileResponse(ROOT/"static/index.html")
 
+
 @app.get("/api/health")
 def health():
     return {"status":"ok","uf":settings.tse_uf,"cargo":settings.tse_cargo,"eleicao":tse.eleicao or "auto"}
+
 
 @app.get("/api/candidatos")
 def candidatos():
@@ -34,12 +46,13 @@ def candidatos():
     except TSEError as e:
         raise HTTPException(502,str(e))
 
+
 @app.get("/api/candidato")
-def candidato():
+def candidato(numero: str | None = Query(default=None), nome: str | None = Query(default=None)):
     try:
-        c=tse.candidate(settings.candidato_numero,settings.candidato_nome)
+        c = resolve_candidate(numero, nome)
         if not c:
-            raise HTTPException(404,"Candidato não encontrado. Configure CANDIDATO_NUMERO ou CANDIDATO_NOME.")
+            raise HTTPException(404,"Candidato não encontrado. Configure CANDIDATO_NUMERO ou CANDIDATO_NOME ou selecione um candidato na interface.")
         return {
             "numero":c.get("n"),"nome":c.get("nm"),"nome_urna":c.get("nmu"),
             "partido_sigla":c.get("partido_sigla"),"partido_nome":c.get("partido_nome"),
@@ -49,23 +62,23 @@ def candidato():
     except TSEError as e:
         raise HTTPException(502,str(e))
 
+
 @app.get("/api/municipios")
-def municipios():
+def municipios(numero: str | None = Query(default=None), nome: str | None = Query(default=None)):
     try:
-        c=tse.candidate(settings.candidato_numero,settings.candidato_nome)
+        c = resolve_candidate(numero, nome)
         if not c: raise HTTPException(404,"Candidato não encontrado.")
         rows=tse.municipalities(c)
-        # Se o EA20 estadual não trouxer a distribuição municipal, a interface
-        # continuará funcional via endpoint individual.
         return rows
     except TSEError as e:
         raise HTTPException(502,str(e))
 
+
 @app.get("/api/municipios/{codigo}")
-def municipio(codigo:str):
+def municipio(codigo:str, numero: str | None = Query(default=None), nome: str | None = Query(default=None)):
     try:
         data=tse.municipality_result(codigo)
-        c=tse.candidate(settings.candidato_numero,settings.candidato_nome)
+        c = resolve_candidate(numero, nome)
         if not c: raise HTTPException(404,"Candidato não encontrado.")
         target=str(c.get("n"))
         rows=[]
@@ -82,6 +95,7 @@ def municipio(codigo:str):
     except TSEError as e:
         raise HTTPException(502,str(e))
 
+
 @app.get("/api/municipios/{codigo}/secoes")
 def secoes(codigo:str):
     try:
@@ -89,10 +103,11 @@ def secoes(codigo:str):
     except TSEError as e:
         raise HTTPException(502,str(e))
 
+
 @app.get("/api/secoes/{municipio}/{zona}/{secao}")
-def secao(municipio:str,zona:str,secao:str):
+def secao(municipio:str,zona:str,secao:str, numero: str | None = Query(default=None), nome: str | None = Query(default=None)):
     try:
-        c=tse.candidate(settings.candidato_numero,settings.candidato_nome)
+        c = resolve_candidate(numero, nome)
         if not c: raise HTTPException(404,"Candidato não encontrado.")
         text,aux=tse.imgbu_text(municipio,zona,secao)
         votes=tse.parse_imgbu(text,c.get("n"))
@@ -107,6 +122,7 @@ def secao(municipio:str,zona:str,secao:str):
         }
     except TSEError as e:
         raise HTTPException(502,str(e))
+
 
 @app.get("/{path:path}")
 def static(path:str):
