@@ -1,5 +1,6 @@
 let map, geoLayer, markerLayer, selected;
 let municipalities=[];
+let selectedCandidate=null;
 const fmt=n=>new Intl.NumberFormat('pt-BR').format(Number(n||0));
 const pct=n=>n==null?'—':`${Number(n).toLocaleString('pt-BR',{maximumFractionDigits:2})}%`;
 async function api(u){const r=await fetch(u);if(!r.ok)throw new Error(await r.text());return r.json();}
@@ -46,7 +47,7 @@ async function openMunicipio(m){
   try{rows=await api(`/api/municipios/${m.codigo}/secoes`)}catch(e){document.querySelector('#sectionGrid').innerHTML='<p>Não foi possível consultar as seções.</p>';return}
   let html='<table><thead><tr><th>Zona</th><th>Seção</th><th>Local</th><th>Votos</th></tr></thead><tbody>';
   for(const r of rows){
-    html+=`<tr class="section" onclick="openSection('${m.codigo}','${r.zona}','${r.secao}','${(r.local_votacao||'').replaceAll("'","")}')"><td>${r.zona}</td><td>${r.secao}</td><td>${r.local_votacao||'Consultar BU'}</td><td id="v-${r.zona}-${r.secao}">—</td></tr>`;
+    html+=`<tr class="section" onclick="openSection('${m.codigo}','${r.zona}','${r.secao}','${(r.local_votacao||'').replaceAll("'","")}')"><td>${r.zona}</td><td>${r.secao}</td><td>${r.local_votacao||'—'}</td><td id="v-${r.zona}-${r.secao}">—</td></tr>`;
   }
   html+='</tbody></table>';
   document.querySelector('#sectionGrid').innerHTML=html;
@@ -66,24 +67,114 @@ async function openSection(m,z,s,local){
   }catch(e){document.querySelector('#detailSub').textContent='Não foi possível obter o arquivo da seção.'}
 }
 
+function showCandidateModal(candidates){
+  const modal=document.querySelector('#candidateModal');
+  const list=document.querySelector('#candidateList');
+  const searchInput=document.querySelector('#candidateSearch');
+  const error=document.querySelector('#modalError');
+  
+  error.textContent='';
+  
+  function renderCandidates(filter=''){
+    list.innerHTML='';
+    const filtered=candidates.filter(c=>
+      `${c.nome} ${c.numero}`.toUpperCase().includes(filter.toUpperCase())
+    );
+    
+    if(filtered.length===0){
+      list.innerHTML='<p style="padding:20px;text-align:center">Nenhum candidato encontrado</p>';
+      return;
+    }
+    
+    filtered.forEach(c=>{
+      const div=document.createElement('div');
+      div.className='candidate-item';
+      div.innerHTML=`<b>${c.nome}</b><br><small>${c.numero} · ${c.partido||'—'}</small>`;
+      div.onclick=()=>selectCandidate(c);
+      list.appendChild(div);
+    });
+  }
+  
+  searchInput.value='';
+  searchInput.oninput=()=>renderCandidates(searchInput.value);
+  renderCandidates();
+  
+  modal.style.display='flex';
+}
+
+async function selectCandidate(candidate){
+  selectedCandidate=candidate;
+  // Salvar no localStorage para não pedir novamente nesta sessão
+  localStorage.setItem('selectedCandidate',JSON.stringify(candidate));
+  document.querySelector('#candidateModal').style.display='none';
+  await loadCandidateData();
+}
+
+async function loadCandidateData(){
+  try{
+    // Consultar com o candidato selecionado
+    const c=await api(`/api/candidatos?numero=${selectedCandidate.numero}`);
+    const candidate=c[0];
+    document.querySelector('#candidate').textContent=candidate.nome||'Candidato';
+    document.querySelector('#party').textContent=[candidate.partido,''].filter(Boolean).join(' · ');
+    document.querySelector('#number').textContent=candidate.numero||'—';
+    
+    // Carregar votos do candidato específico
+    const state=await api(`/api/municipios?numero=${selectedCandidate.numero}`);
+    municipalities=state;
+    const totalVotos=municipalities.reduce((sum,m)=>sum+Number(m.votos||0),0);
+    document.querySelector('#votes').textContent=fmt(totalVotos);
+    document.querySelector('#percent').textContent=pct(municipalities.length>0?100:0);
+    
+    renderList(); 
+    if(geoLayer) map.removeLayer(geoLayer);
+    await loadGeo(); 
+    colorize();
+  }catch(e){
+    console.error('Erro ao carregar candidato:',e);
+    document.querySelector('#candidate').textContent='Erro ao carregar candidato';
+    document.querySelector('#detailSub').textContent=e.message;
+  }
+}
+
 async function init(){
   map=L.map('map').setView([-5.1,-45],6.5);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
-  const c=await api('/api/candidato');
-  document.querySelector('#candidate').textContent=c.nome||'Candidato';
-  document.querySelector('#party').textContent=[c.partido_sigla,c.partido_nome].filter(Boolean).join(' · ');
-  document.querySelector('#number').textContent=c.numero||'—';
-  document.querySelector('#votes').textContent=fmt(c.votos);
-  document.querySelector('#percent').textContent=pct(c.percentual);
-  municipalities=await api('/api/municipios');
-  renderList(); await loadGeo(); colorize();
+  
+  try {
+    // Tentar carregar candidato configurado
+    const c=await api('/api/candidato');
+    document.querySelector('#candidate').textContent=c.nome||'Candidato';
+    document.querySelector('#party').textContent=[c.partido_sigla,c.partido_nome].filter(Boolean).join(' · ');
+    document.querySelector('#number').textContent=c.numero||'—';
+    document.querySelector('#votes').textContent=fmt(c.votos);
+    document.querySelector('#percent').textContent=pct(c.percentual);
+    municipalities=await api('/api/municipios');
+    renderList(); 
+    await loadGeo(); 
+    colorize();
+  } catch(e) {
+    // Se não encontrou candidato configurado, mostrar modal de seleção
+    console.log('Nenhum candidato configurado, carregando lista...');
+    try {
+      const candidates=await api('/api/candidatos');
+      showCandidateModal(candidates);
+    } catch(err) {
+      document.querySelector('#candidate').textContent='Erro ao carregar candidatos';
+      document.querySelector('#detailSub').textContent=err.message;
+    }
+  }
 }
+
 function renderList(){
   const box=document.querySelector('#municipalityList');
   box.innerHTML=municipalities.slice().sort((a,b)=>b.votos-a.votos).map(m=>`<div class="item" onclick='openMunicipio(${JSON.stringify(m)})'><b>${m.nome}</b><span>${fmt(m.votos)} votos</span></div>`).join('');
 }
+
 document.querySelector('#search').addEventListener('input',e=>{
   const q=e.target.value.toLowerCase();document.querySelectorAll('.item').forEach(el=>el.style.display=el.innerText.toLowerCase().includes(q)?'block':'none');
 });
+
 document.querySelector('#back').onclick=()=>geoLayer&&map.fitBounds(geoLayer.getBounds());
+
 init().catch(e=>{document.querySelector('#candidate').textContent='Erro ao carregar dados';document.querySelector('#detailSub').textContent=e.message});
